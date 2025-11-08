@@ -1,0 +1,118 @@
+# =========================
+# 📦 Node / React Section
+# =========================
+
+# Dependency folders
+frontend/node_modules/
+node_modules/
+
+# Build outputs
+frontend/dist/
+frontend/build/
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# Environment variables
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.production
+frontend/.env.test
+
+# Editor specific
+frontend/.vscode/
+frontend/.idea/
+
+# =========================
+# 🐍 Flask / Python Section
+# =========================
+
+# Virtual environment
+backend/venv/
+venv/
+
+# Python cache
+_pycache_/
+*.py[cod]
+*$py.class
+
+# Flask environment variables and instance data
+backend/.env
+backend/instance/
+.env
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+*.pyo
+*.pyd
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# =========================
+# 💻 OS and Editor Files
+# =========================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# VSCode and JetBrains IDEs
+.vscode/
+.idea/
+
+# =========================
+# ⚙ Project Specific
+# =========================
+
+# Flask database (if using SQLite)
+backend/*.db
+backend/*.sqlite3
+
+# Logs
+*.log
+
+# Local uploads (optional)
+backend/uploads/
+uploads/
+
+# Ignore any local testing files
+temp/
+scratch/
