@@ -1,35 +1,62 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import CompanyLogin from "./pages/companyLogin.jsx";
+import CompanySignup from "./pages/companySignup.jsx";
+import CompanyDashboard from "./pages/companyDashboard.jsx";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [companyId, setCompanyId] = useState(null);
+  const [showSignup, setShowSignup] = useState(false);
+
+
+  // when a company logs in, setCompanyId() will be called from CompanyLogin
+  // once companyId is set, dashboard will show instead of login
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div style={{ padding: "2rem", fontFamily: "Inter, sans-serif" }}>
+      <h1 style={{ textAlign: "center", color: "#333" }}>
+        Internship & Placement Tracker
+      </h1>
+
+      <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center" }}>
+        {!companyId ? (
+          showSignup ? (
+            <CompanySignup onSignupComplete={() => setShowSignup(false)} />
+          ) : (
+            <CompanyLogin onLogin={setCompanyId} />
+          )
+        ) : (
+          <CompanyDashboard companyId={companyId} />
+        )}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
+    {!companyId && (
+        <p style={{ textAlign: "center", marginTop: "1rem" }}>
+          {showSignup ? (
+            <>
+              Already registered?{" "}
+              <a
+                href="#"
+                onClick={() => setShowSignup(false)}
+                style={{ color: "#007bff" }}
+              >
+                Log in
+              </a>
+            </>
+          ) : (
+            <>
+              New company?{" "}
+              <a
+                href="#"
+                onClick={() => setShowSignup(true)}
+                style={{ color: "#007bff" }}
+              >
+                Sign up
+              </a>
+            </>
+          )}
         </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;

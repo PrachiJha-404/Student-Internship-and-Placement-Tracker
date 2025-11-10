@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from db import query_db, execute_db
+from werkzeug.security import check_password_hash, generate_password_hash
 
 company_bp = Blueprint('company_bp', __name__, url_prefix='/api/company')
 
@@ -9,23 +10,34 @@ def login_company():
     name = data.get('name')
     password = data.get('password')
     company = query_db("SELECT * FROM company WHERE Name=%s", (name,), fetchone=True)
-    if company and password == "company_pass":
+    if company and check_password_hash(company['PasswordHash'], password):
         return jsonify({"message": "Login successful", "companyId": company["CompanyID"]})
     return jsonify({"error": "Invalid credentials"}), 401
 
 #Dashboard
+# Dashboard
+@company_bp.route('/<int:company_id>/dashboard', methods=['GET'])
 def company_dashboard(company_id):
-    stats = query_db("""
-                      SELECT 
-            COUNT(DISTINCT jp.JobID) AS total_jobs,
-            COUNT(a.ApplicationID) AS total_applications,
-            SUM(a.Status='Selected') AS selected
-        FROM jobposting jp
-        LEFT JOIN application a ON jp.JobID = a.JobID
-        WHERE jp.CompanyID = %s
-                     """, (company_id,), fetchone=True)
-    
-    return jsonify(stats if stats else {})
+    try:
+        stats = query_db("""
+            SELECT 
+                COUNT(DISTINCT jp.JobID) AS total_jobs,
+                COUNT(a.ApplicationID) AS total_applications,
+                SUM(a.Status='Selected') AS selected
+            FROM jobposting jp
+            LEFT JOIN application a ON jp.JobID = a.JobID
+            WHERE jp.CompanyID = %s
+        """, (company_id,), fetchone=True)
+
+        return jsonify(stats if stats else {
+            "total_jobs": 0,
+            "total_applications": 0,
+            "selected": 0
+        })
+    except Exception as e:
+        print("❌ Error fetching dashboard data:", e)
+        return jsonify({"error": "Failed to fetch dashboard"}), 500
+
 
 #Get all job postings for a company
 @company_bp.route('/<int:company_id>/jobs', methods=['GET'])
@@ -69,4 +81,17 @@ def update_status(application_id):
     new_status = data.get('status')
     execute_db("UPDATE application SET Status=%s WHERE ApplicationID=%s", (new_status, application_id))
     return jsonify({"message": f"Application status updated to {new_status}"})
+
+#SIGNUP
+@company_bp.route('/register', methods=['POST'])
+def register_company():
+    data = request.json
+    hashed = generate_password_hash(data['password'])
+
+    execute_db("""
+        INSERT INTO company (Name, Domain, Location, EligibilityCriteria, JobRole, PasswordHash)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (data['name'], data['domain'], data['location'], data['eligibility'], data['jobRole'], hashed))
+
+    return jsonify({"message": "Company registered successfully"})
 

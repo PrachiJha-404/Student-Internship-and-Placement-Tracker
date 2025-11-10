@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import JobPostForm from '../components/JobPostForm';
+import ApplicantTable from "../components/applicantTable.jsx";
 
 export default function CompanyDashboard({companyId}){
     const [stats, setStats] = useState({});
