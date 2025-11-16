@@ -203,3 +203,82 @@ def register_company():
     """, (data['name'], data['domain'], data['location'], data['eligibility'], data['jobRole'], hashed))
 
     return jsonify({"message": "Company registered successfully"})
+
+# Update a job posting
+@company_bp.route('/jobs/<int:job_id>', methods=['PUT'])
+def update_job(job_id):
+    try:
+        company_id = request.headers.get("x-company-id")
+        data = request.json
+        
+        # Verify the job belongs to this company
+        job = query_db(
+            "SELECT * FROM jobposting WHERE JobID=%s AND CompanyID=%s", 
+            (job_id, company_id), 
+            fetchone=True
+        )
+        
+        if not job:
+            return jsonify({"error": "Job not found or unauthorized"}), 404
+        
+        # Update the job
+        execute_db("""
+            UPDATE jobposting 
+            SET Title=%s, Description=%s, Deadline=%s, Salary=%s, MinGPA=%s
+            WHERE JobID=%s AND CompanyID=%s
+        """, (
+            data['title'], 
+            data['description'], 
+            data['deadline'], 
+            data['salary'], 
+            data['minGpa'],
+            job_id,
+            company_id
+        ))
+        
+        return jsonify({"message": "Job updated successfully"}), 200
+        
+    except Exception as e:
+        print(f"❌ Error updating job: {e}")
+        traceback.print_exc()
+        return jsonify({"error": "Failed to update job", "details": str(e)}), 500
+
+
+# Delete a job posting
+@company_bp.route('/jobs/<int:job_id>', methods=['DELETE'])
+def delete_job(job_id):
+    try:
+        company_id = request.headers.get("x-company-id")
+        
+        # Verify the job belongs to this company
+        job = query_db(
+            "SELECT * FROM jobposting WHERE JobID=%s AND CompanyID=%s", 
+            (job_id, company_id), 
+            fetchone=True
+        )
+        
+        if not job:
+            return jsonify({"error": "Job not found or unauthorized"}), 404
+        
+        # Check if there are any applications for this job
+        applications = query_db(
+            "SELECT COUNT(*) as count FROM application WHERE JobID=%s", 
+            (job_id,), 
+            fetchone=True
+        )
+        
+        if applications and applications['count'] > 0:
+            return jsonify({
+                "error": "Cannot delete job with existing applications",
+                "suggestion": "Consider stopping hiring instead"
+            }), 400
+        
+        # Delete the job
+        execute_db("DELETE FROM jobposting WHERE JobID=%s AND CompanyID=%s", (job_id, company_id))
+        
+        return jsonify({"message": "Job deleted successfully"}), 200
+        
+    except Exception as e:
+        print(f"❌ Error deleting job: {e}")
+        traceback.print_exc()
+        return jsonify({"error": "Failed to delete job", "details": str(e)}), 500

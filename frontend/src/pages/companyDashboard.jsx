@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
-import { Briefcase, Users, CheckCircle, TrendingUp, Calendar, DollarSign, GraduationCap, X, Plus } from "lucide-react";
+import { Briefcase, Users, CheckCircle, TrendingUp, Calendar, DollarSign, GraduationCap, X, Plus, Edit2, Trash2 } from "lucide-react";
 import ApplicantTable from "../components/applicantTable.jsx";
 import api from "../api/axios.js"
+
 export default function CompanyDashboard({ companyId }) {
   const [stats, setStats] = useState({});
   const [jobs, setJobs] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+
+  const fetchJobs = async () => {
+    try {
+      const jobsRes = await api.get("/api/company/jobs");
+      setJobs(jobsRes.data);
+    } catch (err) {
+      console.error("Error fetching jobs:", err);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -17,10 +28,6 @@ export default function CompanyDashboard({ companyId }) {
 
         setStats(statsRes.data);
         setJobs(jobsRes.data);
-        // const statsData = await statsRes.json();
-        // const jobsData = await jobsRes.json();
-        // setStats(statsData);
-        // setJobs(jobsData);
       } catch (err) {
         console.error("Error fetching data:", err);
       }
@@ -31,22 +38,47 @@ export default function CompanyDashboard({ companyId }) {
   const activeJobs = jobs.filter((job) => new Date(job.Deadline) > new Date());
 
   const stopHiring = async (jobId) => {
-    const res = await api.put(`/api/company/jobs/${jobId}/stop`);
-
-    const data = await res.json();
-    if (res.ok) {
-      alert("✅ " + data.message);
-      const refreshed = await api.get(`/api/company/jobs`);
-      setJobs(refreshed.data);
+    if (!confirm("Are you sure you want to stop hiring for this position?")) return;
+    
+    try {
+      const res = await api.put(`/api/company/jobs/${jobId}/stop`);
+      alert("✅ Hiring stopped successfully");
+      await fetchJobs();
+    } catch (err) {
+      console.error("Error stopping hiring:", err);
+      alert("❌ Failed to stop hiring");
     }
   };
 
-  const handleJobPosted = async () => {
+  const deleteJob = async (jobId) => {
+    if (!confirm("Are you sure you want to delete this job? This action cannot be undone.")) return;
+    
+    try {
+      const res = await api.delete(`/api/company/jobs/${jobId}`);
+      alert("✅ Job deleted successfully");
+      await fetchJobs();
+    } catch (err) {
+      console.error("Error deleting job:", err);
+      if (err.response?.data?.error) {
+        alert("❌ " + err.response.data.error);
+        if (err.response.data.suggestion) {
+          alert("💡 " + err.response.data.suggestion);
+        }
+      } else {
+        alert("❌ Failed to delete job");
+      }
+    }
+  };
+
+  const startEditing = (job) => {
+    setEditingJob(job);
+    setShowForm(true);
+  };
+
+  const handleJobSuccess = async () => {
     setShowForm(false);
-    const refreshed = await fetch(
-      `http://localhost:5000/api/company/${companyId}/jobs`
-    ).then((r) => r.json());
-    setJobs(refreshed);
+    setEditingJob(null);
+    await fetchJobs();
   };
 
   return (
@@ -143,14 +175,19 @@ export default function CompanyDashboard({ companyId }) {
           />
         </div>
 
-        {/* Post Job Button */}
+        {/* Post/Edit Job Button */}
         <div style={{
           marginBottom: '3rem',
           display: 'flex',
           justifyContent: 'center'
         }}>
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (showForm && editingJob) {
+                setEditingJob(null);
+              }
+              setShowForm(!showForm);
+            }}
             style={{
               background: 'linear-gradient(to right, #2563eb, #4f46e5)',
               color: 'white',
@@ -189,7 +226,7 @@ export default function CompanyDashboard({ companyId }) {
           </button>
         </div>
 
-        {/* Job Post Form - Slide In Animation */}
+        {/* Job Post/Edit Form - Slide In Animation */}
         <div style={{
           maxHeight: showForm ? '1000px' : '0',
           opacity: showForm ? 1 : 0,
@@ -206,7 +243,11 @@ export default function CompanyDashboard({ companyId }) {
             padding: '2rem',
             border: '1px solid #e2e8f0'
           }}>
-            <JobPostForm companyId={companyId} onSuccess={handleJobPosted} />
+            <JobPostForm 
+              companyId={companyId} 
+              onSuccess={handleJobSuccess}
+              editingJob={editingJob}
+            />
           </div>
         </div>
 
@@ -256,7 +297,7 @@ export default function CompanyDashboard({ companyId }) {
               gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
               gap: '1.5rem'
             }}>
-              {jobs.map((job, index) => {
+              {jobs.map((job) => {
                 const isClosed = new Date(job.Deadline) <= new Date();
                 return (
                   <JobCard 
@@ -264,6 +305,8 @@ export default function CompanyDashboard({ companyId }) {
                     job={job} 
                     isClosed={isClosed} 
                     stopHiring={stopHiring}
+                    deleteJob={deleteJob}
+                    onEdit={startEditing}
                   />
                 );
               })}
@@ -325,7 +368,7 @@ function StatCard({ icon, title, value, gradient }) {
   );
 }
 
-function JobCard({ job, isClosed, stopHiring }) {
+function JobCard({ job, isClosed, stopHiring, deleteJob, onEdit }) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -343,28 +386,76 @@ function JobCard({ job, isClosed, stopHiring }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div style={{ marginBottom: '1rem' }}>
-        <h3 style={{
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-          color: '#0f172a',
-          marginBottom: '0.5rem'
-        }}>
-          {job.Title}
-        </h3>
-        {isClosed && (
-          <span style={{
-            display: 'inline-block',
-            background: '#fee2e2',
-            color: '#b91c1c',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '9999px',
-            fontSize: '0.75rem',
-            fontWeight: '600'
+      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+        <div>
+          <h3 style={{
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            color: '#0f172a',
+            marginBottom: '0.5rem'
           }}>
-            Closed
-          </span>
-        )}
+            {job.Title}
+          </h3>
+          {isClosed && (
+            <span style={{
+              display: 'inline-block',
+              background: '#fee2e2',
+              color: '#b91c1c',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: '600'
+            }}>
+              Closed
+            </span>
+          )}
+        </div>
+        
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={() => onEdit(job)}
+            style={{
+              background: 'linear-gradient(to right, #3b82f6, #2563eb)',
+              color: 'white',
+              padding: '0.5rem',
+              borderRadius: '0.5rem',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+            title="Edit Job"
+          >
+            <Edit2 size={16} />
+          </button>
+          <button
+            onClick={() => deleteJob(job.JobID)}
+            style={{
+              background: 'linear-gradient(to right, #ef4444, #dc2626)',
+              color: 'white',
+              padding: '0.5rem',
+              borderRadius: '0.5rem',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+            title="Delete Job"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
 
       <div style={{ marginBottom: '1.5rem' }}>
@@ -412,7 +503,7 @@ function JobCard({ job, isClosed, stopHiring }) {
           onClick={() => stopHiring(job.JobID)}
           style={{
             width: '100%',
-            background: 'linear-gradient(to right, #ef4444, #dc2626)',
+            background: 'linear-gradient(to right, #f59e0b, #d97706)',
             color: 'white',
             padding: '0.75rem',
             borderRadius: '0.75rem',
@@ -446,7 +537,7 @@ function JobCard({ job, isClosed, stopHiring }) {
   );
 }
 
-function JobPostForm({ companyId, onSuccess }) {
+function JobPostForm({ companyId, onSuccess, editingJob }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -455,6 +546,27 @@ function JobPostForm({ companyId, onSuccess }) {
     minGpa: "",
   });
   const [loading, setLoading] = useState(false);
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editingJob) {
+      setForm({
+        title: editingJob.Title || "",
+        description: editingJob.Description || "",
+        deadline: editingJob.Deadline ? editingJob.Deadline.split('T')[0] : "",
+        salary: editingJob.Salary || "",
+        minGpa: editingJob.MinGPA || "",
+      });
+    } else {
+      setForm({
+        title: "",
+        description: "",
+        deadline: "",
+        salary: "",
+        minGpa: "",
+      });
+    }
+  }, [editingJob]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -467,9 +579,16 @@ function JobPostForm({ companyId, onSuccess }) {
 
     setLoading(true);
     try {
-      await await api.post(`/api/company/jobs`, form);
-
-      alert("✅ Job posted successfully!");
+      if (editingJob) {
+        // Update existing job
+        await api.put(`/api/company/jobs/${editingJob.JobID}`, form);
+        alert("✅ Job updated successfully!");
+      } else {
+        // Create new job
+        await api.post(`/api/company/jobs`, form);
+        alert("✅ Job posted successfully!");
+      }
+      
       setForm({
         title: "",
         description: "",
@@ -479,7 +598,7 @@ function JobPostForm({ companyId, onSuccess }) {
       });
       if (onSuccess) onSuccess();
     } catch (err) {
-      console.error("❌ Error posting job:", err);
+      console.error("❌ Error saving job:", err);
       alert("Server error – check console");
     }
     setLoading(false);
@@ -494,7 +613,7 @@ function JobPostForm({ companyId, onSuccess }) {
         marginBottom: '2rem',
         textAlign: 'center'
       }}>
-        Create New Position
+        {editingJob ? 'Edit Position' : 'Create New Position'}
       </h2>
       
       <div style={{
@@ -584,7 +703,7 @@ function JobPostForm({ companyId, onSuccess }) {
             }
           }}
         >
-          {loading ? "Publishing..." : "Publish Job"}
+          {loading ? (editingJob ? "Updating..." : "Publishing...") : (editingJob ? "Update Job" : "Publish Job")}
         </button>
       </div>
     </div>
