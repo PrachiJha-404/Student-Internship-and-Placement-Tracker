@@ -10,7 +10,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import EligibleJobs from "./pages/Eligiblejobs";
 import JobDetail from "./pages/JobDetail";
 
-import CompanyDashboard from "./pages/CompanyDashboard";
+import CompanyDashboard from "./pages/companyDashboard";
 
 import ProtectedRoute from "./pages/ProtectedRoutes";
 import StudentApplications from "./pages/studentApplications";

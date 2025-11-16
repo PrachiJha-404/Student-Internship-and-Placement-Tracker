@@ -175,7 +175,11 @@ def login_user():
 def get_interviews():
     try:
         student_id = request.headers.get("x-student-id")
-
+        
+        if not student_id:
+            return jsonify({"error": "Student ID required"}), 400
+        
+        print(f"📅 Fetching interviews for student: {student_id}")
         interviews = query_db("""
             SELECT 
                 i.ScheduleID,
@@ -183,6 +187,7 @@ def get_interviews():
                 i.InterviewTime,
                 i.InterviewAt,
                 i.LinkOrLocation,
+                a.ApplicationID,
                 jp.JobID,
                 jp.Title,
                 c.Name AS CompanyName
@@ -191,15 +196,36 @@ def get_interviews():
             JOIN jobposting jp ON a.JobID = jp.JobID
             JOIN company c ON jp.CompanyID = c.CompanyID
             WHERE a.StudentID = %s
-            ORDER BY i.InterviewAt ASC
+            ORDER BY i.InterviewDate ASC, i.InterviewTime ASC
         """, (student_id,))
-
+        
+        # Format dates and times in Python
+        for interview in interviews:
+            if interview['InterviewDate']:
+                interview['InterviewDate'] = interview['InterviewDate'].strftime('%Y-%m-%d')
+            if interview['InterviewTime']:
+                # Handle timedelta from MySQL TIME type
+                import datetime
+                if isinstance(interview['InterviewTime'], datetime.timedelta):
+                    total_seconds = int(interview['InterviewTime'].total_seconds())
+                    hours, remainder = divmod(total_seconds, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    interview['InterviewTime'] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                else:
+                    interview['InterviewTime'] = interview['InterviewTime'].strftime('%H:%M:%S')
+            if interview['InterviewAt']:
+                interview['InterviewAt'] = interview['InterviewAt'].strftime('%Y-%m-%d %H:%M:%S')
+        
+        print(f"✅ Found {len(interviews)} interviews")
+        print(f"Interviews data: {interviews}")
         return jsonify(interviews), 200
-
     except Exception as e:
-        print("Interview fetch error:", e)
-        return jsonify({"error": "Failed to fetch interviews"}), 500
-
+        print("❌ Interview fetch error:")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Failed to fetch interviews", "details": str(e)}), 500
 @user_bp.route("/resume/<path:filename>", methods=["GET"])
 def serve_resume(filename):
     # SECURITY: in production restrict access (authentication) before serving
