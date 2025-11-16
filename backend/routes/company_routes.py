@@ -9,16 +9,17 @@ def login_company():
     data = request.json
     name = data.get('name')
     password = data.get('password')
-    company = query_db("SELECT * FROM company WHERE Name=%s", (name,), fetchone=True)
+    company = query_db("SELECT * FROM company WHERE name=%s", (name,), fetchone=True)
     if company and check_password_hash(company['PasswordHash'], password):
         return jsonify({"message": "Login successful", "companyId": company["CompanyID"]})
     return jsonify({"error": "Invalid credentials"}), 401
 
 #Dashboard
 # Dashboard
-@company_bp.route('/<int:company_id>/dashboard', methods=['GET'])
-def company_dashboard(company_id):
+@company_bp.route('/dashboard', methods=['GET'])
+def company_dashboard():
     try:
+        company_id = int(request.headers.get("x-company-id"))
         stats = query_db("""
             SELECT 
                 COUNT(DISTINCT jp.JobID) AS total_jobs,
@@ -40,14 +41,16 @@ def company_dashboard(company_id):
 
 
 #Get all job postings for a company
-@company_bp.route('/<int:company_id>/jobs', methods=['GET'])
-def get_company_jobs(company_id):
+@company_bp.route('/jobs', methods=['GET'])
+def get_company_jobs():
+    company_id = request.headers.get("x-company-id")
     jobs = query_db("SELECT * FROM jobposting WHERE CompanyID=%s", (company_id,))
     return jsonify(jobs)
 
 #Add a New Job Posting (with Deadline)
-@company_bp.route('/<int:company_id>/jobs', methods=['POST'])
-def add_job(company_id):
+@company_bp.route('/jobs', methods=['POST'])
+def add_job():
+    company_id = request.headers.get("x-company-id")
     data = request.json
     execute_db("""
         INSERT INTO jobposting (CompanyID, Title, Description, Deadline, Salary, MinGPA)

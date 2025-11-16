@@ -1,61 +1,103 @@
-import { useState } from "react";
-import CompanyLogin from "./pages/companyLogin.jsx";
-import CompanySignup from "./pages/companySignup.jsx";
-import CompanyDashboard from "./pages/companyDashboard.jsx";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./pages/home";
+import LoginUser from "./pages/userlogin";
+import LoginCompany from "./pages/companyLogin";
+import RegisterUser from "./pages/userRegister";
+import RegisterCompany from "./pages/companyRegister";
+
+import StudentDashboard from "./pages/StudentDashboard";
+import EligibleJobs from "./pages/Eligiblejobs";
+import JobDetail from "./pages/JobDetail";
+
+import CompanyDashboard from "./pages/CompanyDashboard";
+
+import ProtectedRoute from "./pages/ProtectedRoutes";
+import StudentApplications from "./pages/studentApplications";
+
+import StudentNotifications from "./pages/studentNotifications";
+import StudentInterviews from "./pages/upcomingInterviews";
+
+
+
 
 function App() {
-  const [companyId, setCompanyId] = useState(null);
-  const [showSignup, setShowSignup] = useState(false);
-
-
-  // when a company logs in, setCompanyId() will be called from CompanyLogin
-  // once companyId is set, dashboard will show instead of login
-
   return (
-    <div style={{ padding: "2rem", fontFamily: "Inter, sans-serif" }}>
-      <h1 style={{ textAlign: "center", color: "#333" }}>
-        Internship & Placement Tracker
-      </h1>
+    <Router>
+      <Routes>
+        {/* PUBLIC ROUTES */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login/user" element={<LoginUser />} />
+        <Route path="/login/company" element={<LoginCompany />} />
+        <Route path="/register/user" element={<RegisterUser />} />
+        <Route path="/register/company" element={<RegisterCompany />} />
 
-      <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center" }}>
-        {!companyId ? (
-          showSignup ? (
-            <CompanySignup onSignupComplete={() => setShowSignup(false)} />
-          ) : (
-            <CompanyLogin onLogin={setCompanyId} />
-          )
-        ) : (
-          <CompanyDashboard companyId={companyId} />
-        )}
-      </div>
-    {!companyId && (
-        <p style={{ textAlign: "center", marginTop: "1rem" }}>
-          {showSignup ? (
-            <>
-              Already registered?{" "}
-              <a
-                href="#"
-                onClick={() => setShowSignup(false)}
-                style={{ color: "#007bff" }}
-              >
-                Log in
-              </a>
-            </>
-          ) : (
-            <>
-              New company?{" "}
-              <a
-                href="#"
-                onClick={() => setShowSignup(true)}
-                style={{ color: "#007bff" }}
-              >
-                Sign up
-              </a>
-            </>
-          )}
-        </p>
-      )}
-    </div>
+        {/* STUDENT PROTECTED ROUTES */}
+        <Route
+          path="/student/dashboard"
+          element={
+            <ProtectedRoute role="student">
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/student/eligible-jobs"
+          element={
+            <ProtectedRoute role="student">
+              <EligibleJobs />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Job Detail (still student-only) */}
+        <Route
+          path="/student/jobs/:jobId"
+          element={
+            <ProtectedRoute role="student">
+              <JobDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* COMPANY PROTECTED ROUTES */}
+        <Route
+          path="/company/dashboard"
+          element={
+            <ProtectedRoute role="company">
+              <CompanyDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/applications"
+          element={
+            <ProtectedRoute role="student">
+              <StudentApplications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/notifications"
+          element={
+            <ProtectedRoute role="student">
+              <StudentNotifications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/interviews"
+          element={
+            <ProtectedRoute role="student">
+              <StudentInterviews />
+            </ProtectedRoute>
+          }
+        />
+
+      </Routes>
+
+    </Router>
   );
 }
 

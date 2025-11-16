@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Briefcase, Users, CheckCircle, TrendingUp, Calendar, DollarSign, GraduationCap, X, Plus } from "lucide-react";
 import ApplicantTable from "../components/applicantTable.jsx";
-
+import api from "../api/axios.js"
 export default function CompanyDashboard({ companyId }) {
   const [stats, setStats] = useState({});
   const [jobs, setJobs] = useState([]);
@@ -11,13 +11,16 @@ export default function CompanyDashboard({ companyId }) {
     const fetchData = async () => {
       try {
         const [statsRes, jobsRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/company/${companyId}/dashboard`),
-          fetch(`http://localhost:5000/api/company/${companyId}/jobs`),
+          api.get("/api/company/dashboard"),
+          api.get("/api/company/jobs"),
         ]);
-        const statsData = await statsRes.json();
-        const jobsData = await jobsRes.json();
-        setStats(statsData);
-        setJobs(jobsData);
+
+        setStats(statsRes.data);
+        setJobs(jobsRes.data);
+        // const statsData = await statsRes.json();
+        // const jobsData = await jobsRes.json();
+        // setStats(statsData);
+        // setJobs(jobsData);
       } catch (err) {
         console.error("Error fetching data:", err);
       }
@@ -28,17 +31,13 @@ export default function CompanyDashboard({ companyId }) {
   const activeJobs = jobs.filter((job) => new Date(job.Deadline) > new Date());
 
   const stopHiring = async (jobId) => {
-    const res = await fetch(
-      `http://localhost:5000/api/company/jobs/${jobId}/stop`,
-      { method: "PUT" }
-    );
+    const res = await api.put(`/api/company/jobs/${jobId}/stop`);
+
     const data = await res.json();
     if (res.ok) {
       alert("✅ " + data.message);
-      const refreshed = await fetch(
-        `http://localhost:5000/api/company/${companyId}/jobs`
-      ).then((r) => r.json());
-      setJobs(refreshed);
+      const refreshed = await api.get(`/api/company/jobs`);
+      setJobs(refreshed.data);
     }
   };
 
@@ -468,11 +467,8 @@ function JobPostForm({ companyId, onSuccess }) {
 
     setLoading(true);
     try {
-      await fetch(`http://localhost:5000/api/company/${companyId}/jobs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      await await api.post(`/api/company/jobs`, form);
+
       alert("✅ Job posted successfully!");
       setForm({
         title: "",
