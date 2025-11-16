@@ -10,7 +10,7 @@ export default function ApplicantTable({ jobId }) {
     fetch(`http://localhost:5000/api/company/jobs/${jobId}/applicants`)
       .then(r => r.json())
       .then(data => {
-        setApplicants(data);
+        setApplicants(data); 
         setLoading(false);
       })
       .catch(() => setLoading(false));
