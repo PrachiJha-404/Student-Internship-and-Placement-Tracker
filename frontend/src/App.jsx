@@ -1,35 +1,104 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./pages/home";
+import LoginUser from "./pages/userlogin";
+import LoginCompany from "./pages/companyLogin";
+import RegisterUser from "./pages/userRegister";
+import RegisterCompany from "./pages/companyRegister";
+
+import StudentDashboard from "./pages/StudentDashboard";
+import EligibleJobs from "./pages/Eligiblejobs";
+import JobDetail from "./pages/JobDetail";
+
+import CompanyDashboard from "./pages/companyDashboard";
+
+import ProtectedRoute from "./pages/ProtectedRoutes";
+import StudentApplications from "./pages/studentApplications";
+
+import StudentNotifications from "./pages/studentNotifications";
+import StudentInterviews from "./pages/upcomingInterviews";
+
+
+
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Router>
+      <Routes>
+        {/* PUBLIC ROUTES */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login/user" element={<LoginUser />} />
+        <Route path="/login/company" element={<LoginCompany />} />
+        <Route path="/register/user" element={<RegisterUser />} />
+        <Route path="/register/company" element={<RegisterCompany />} />
+
+        {/* STUDENT PROTECTED ROUTES */}
+        <Route
+          path="/student/dashboard"
+          element={
+            <ProtectedRoute role="student">
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/student/eligible-jobs"
+          element={
+            <ProtectedRoute role="student">
+              <EligibleJobs />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Job Detail (still student-only) */}
+        <Route
+          path="/student/jobs/:jobId"
+          element={
+            <ProtectedRoute role="student">
+              <JobDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* COMPANY PROTECTED ROUTES */}
+        <Route
+          path="/company/dashboard"
+          element={
+            <ProtectedRoute role="company">
+              <CompanyDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/applications"
+          element={
+            <ProtectedRoute role="student">
+              <StudentApplications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/notifications"
+          element={
+            <ProtectedRoute role="student">
+              <StudentNotifications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/interviews"
+          element={
+            <ProtectedRoute role="student">
+              <StudentInterviews />
+            </ProtectedRoute>
+          }
+        />
+
+      </Routes>
+
+    </Router>
+  );
 }
 
-export default App
+export default App;
