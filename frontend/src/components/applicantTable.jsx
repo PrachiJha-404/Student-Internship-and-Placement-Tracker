@@ -422,7 +422,7 @@ export default function ApplicantTable({ jobId }) {
               }}>
                 {applicant.Resume && (
                   <a
-                    href={`http://localhost:5000/${applicant.Resume}`}
+                    href={`http://localhost:5000/api/user/resume/${applicant.Resume}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{

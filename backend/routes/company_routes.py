@@ -57,7 +57,7 @@ def add_job():
 
 @company_bp.route('/jobs/<int:job_id>/stop', methods=['PUT'])
 def stop_hiring(job_id):
-    execute_db("UPDATE jobposting SET Deadline = CURDATE() WHERE JobID = %s", (job_id,))
+    execute_db("UPDATE jobposting SET Deadline = CURDATE()-1 WHERE JobID = %s", (job_id,))
     return jsonify({"message": "Hiring stopped for this job"})
 
 @company_bp.route('/jobs/<int:job_id>/applicants', methods=['GET'])

@@ -226,9 +226,11 @@ def get_interviews():
         import traceback
         traceback.print_exc()
         return jsonify({"error": "Failed to fetch interviews", "details": str(e)}), 500
-@user_bp.route("/resume/<path:filename>", methods=["GET"])
-def serve_resume(filename):
-    # SECURITY: in production restrict access (authentication) before serving
+
+@user_bp.route("/resume/<path:filepath>", methods=["GET"])
+def serve_resume(filepath):
+    # filepath could be something like "uploads/resumes/resume_123.pdf"
+    filename = os.path.basename(filepath)  # extract only the filename
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 @user_bp.route("/dashboard", methods=["GET"])
